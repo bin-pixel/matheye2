@@ -1,0 +1,104 @@
+body { 
+    margin: 0; 
+    background-color: #0b0f19; 
+    overflow: hidden; 
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    user-select: none;
+}
+
+/* 통공형 유리 패널 스타일 테마 적용 */
+#info-panel, #control-panel {
+    position: absolute;
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid #2e3d52;
+    border-radius: 14px;
+    padding: 20px;
+    color: #f1f5f9;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    z-index: 10;
+    backdrop-filter: blur(8px);
+}
+
+#info-panel {
+    top: 20px;
+    left: 20px;
+    width: 260px;
+}
+
+#control-panel {
+    top: 20px;
+    right: 20px;
+    width: 400px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto; /* 슬라이더가 많아지면 스크롤 처리 */
+}
+
+/* 스크롤바 커스텀 */
+#control-panel::-webkit-scrollbar { width: 6px; }
+#control-panel::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+h2 { color: #61dafb; margin: 0 0 10px 0; font-size: 18px; letter-spacing: 0.5px; }
+p { color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 0 0 14px 0; }
+
+.panel-section {
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+.panel-section:last-child { border: none; padding: 0; margin: 0; }
+
+.panel-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #34d399;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+}
+
+.guide-box { background: #0f172a; padding: 10px; border-radius: 8px; font-size: 11px; color: #cbd5e1; }
+.guide-box ul { margin: 6px 0 0 0; padding-left: 18px; }
+
+.preset-section { margin-top: 15px; display: flex; flex-direction: column; gap: 6px; }
+.preset-section label { font-size: 11px; color: #94a3b8; }
+select {
+    background: #1e293b; border: 1px solid #475569; color: #fff;
+    padding: 8px; border-radius: 6px; font-size: 12px; outline: none; cursor: pointer;
+}
+
+/* 버튼 구조 */
+.btn-row { display: flex; gap: 8px; }
+.btn {
+    flex: 1; padding: 9px; border: none; border-radius: 6px; 
+    font-weight: bold; font-size: 12px; cursor: pointer; transition: all 0.2s;
+    color: white; text-align: center;
+}
+.btn-green { background: linear-gradient(135deg, #10b981, #047857); }
+.btn-red { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+.btn-blue { background: linear-gradient(135deg, #0284c7, #0369a1); }
+.btn-slate { background: #475569; }
+.btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
+/* 동적 제어점 카드 */
+.point-card {
+    background: #0f172a; border: 1px solid #1e293b;
+    border-radius: 8px; padding: 10px; margin-bottom: 8px;
+}
+.point-header {
+    display: flex; justify-content: space-between; font-size: 11px;
+    font-family: monospace; font-weight: bold; margin-bottom: 6px;
+}
+.axis-row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+.axis-row label { width: 15px; font-size: 11px; font-weight: bold; font-family: monospace; }
+.axis-row input[type="range"] { flex: 1; accent-color: #38bdf8; height: 4px; }
+.axis-val { width: 45px; text-align: right; font-family: monospace; font-size: 11px; color: #38bdf8; }
+
+/* 수식 보드 */
+.math-label { font-size: 11px; color: #94a3b8; }
+.math-container {
+    background: #090d16; padding: 10px; border-radius: 8px;
+    margin-top: 8px; border: 1px solid #1e293b;
+    font-family: 'Courier New', monospace; font-size: 11px;
+    color: #38bdf8; overflow-x: auto; white-space: nowrap;
+}
+
+.highlight { color: #38bdf8; font-weight: bold; }
