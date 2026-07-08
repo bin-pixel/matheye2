@@ -46,9 +46,16 @@
                 <button id="btn-reset-sim" class="btn btn-slate">초기화</button>
             </div>
             
-            <div class="toggle-row">
-                <input type="checkbox" id="toggle-construction" checked>
-                <label for="toggle-construction">단계별 분할 가이드선 표시 (De Casteljau)</label>
+            <div class="toggle-container">
+                <div class="toggle-row">
+                    <input type="checkbox" id="toggle-construction" checked>
+                    <label for="toggle-construction">단계별 분할 가이드선 표시 (De Casteljau)</label>
+                </div>
+                <div id="t-slider-wrapper">
+                    <label>Time (t):</label>
+                    <input type="range" id="input-t-value" min="0" max="1" step="0.01" value="0.25">
+                    <span id="t-value-display">0.25</span>
+                </div>
             </div>
         </div>
 
