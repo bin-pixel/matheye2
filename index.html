@@ -6,14 +6,12 @@
     <title>고급 3D N차 베지에 곡선 시뮬레이터</title>
     <link rel="stylesheet" href="styles.css">
     
-    <!-- 3D 그래픽 라이브러리 및 마우스 제어 모듈 로드 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/DragControls.js"></script>
 </head>
 <body>
 
-    <!-- 왼쪽 기본 안내 패널 -->
     <div id="info-panel">
         <h2>3D Bézier Engine</h2>
         <p>차수의 제한이 없는 <span class="highlight">일반화된 n차 베지에 곡선</span> 매개변수 기하학 분석기입니다.</p>
@@ -36,7 +34,6 @@
         </div>
     </div>
 
-    <!-- 우측 통합 메트릭스 & 컨트롤 슬라이더 패널 -->
     <div id="control-panel">
         <div class="panel-section">
             <div class="panel-title">🛠️ ENGINE CONTROLLER</div>
@@ -48,11 +45,15 @@
                 <button id="btn-toggle-sim" class="btn btn-blue">▶ 투사체 시뮬레이션 시작</button>
                 <button id="btn-reset-sim" class="btn btn-slate">초기화</button>
             </div>
+            
+            <div class="toggle-row">
+                <input type="checkbox" id="toggle-construction" checked>
+                <label for="toggle-construction">단계별 분할 가이드선 표시 (De Casteljau)</label>
+            </div>
         </div>
 
         <div class="panel-section">
             <div class="panel-title">📍 CONTROL POINTS & SLIDERS</div>
-            <!-- 자바스크립트에서 제어점 개수에 따라 동적으로 슬라이더 항목을 생성함 -->
             <div id="dynamic-sliders-container"></div>
         </div>
 
@@ -68,7 +69,6 @@
         </div>
     </div>
 
-    <!-- 수학 연산 엔진과 메인 앱 스크립트 연결 -->
     <script src="bezier-math.js"></script>
     <script src="app.js"></script>
 </body>
