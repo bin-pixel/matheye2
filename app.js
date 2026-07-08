@@ -4,21 +4,21 @@
 
 // 1. 전역 시스템 변수 정의
 let scene, camera, renderer, orbitControls, dragControls;
-let controlPoints = [];      // 공간 좌표 Vector3 배열
-let pointMeshes = [];        // 화면에 그려질 3D 구체 오브젝트 배열
-let controlLine = null;      // 제어점들을 연결하는 가이드 라인
-let bezierLine = null;       // 최종 연산된 베지에 곡선 라인
+let controlPoints = [];      
+let pointMeshes = [];        
+let controlLine = null;      
+let bezierLine = null;       
 
-// 드 카스텔조 분할 가이드선 관리를 위한 가비지 콜렉팅 배열
+// 가이드라인 구체 렌더링 최적화를 위한 전역 공유 지오메트리 변수 (버그 해결 핵심)
+let sharedSphereGeo = null;
 let constructionObjects = [];
 
-// 시뮬레이션용 드론 및 접선 벡터 화살표 오브젝트
+// 시뮬레이션 및 수동 추적 제어 변수
 let droneMesh = null;
 let tangentArrow = null;
-let simTime = 0.25;          // 시작 기본 매개변수 t값 (이미지 분석 기준과 동치)
+let simTime = 0.25;          // 초기 기본 분석 단면 t 위치 
 let isSimulating = false;
 
-// 2. 기하학 구조 프리셋 매트릭스 정의
 const PRESETS = {
     cubic: [
         new THREE.Vector3(-6, 2, -4),
@@ -52,7 +52,6 @@ const PRESETS = {
     ]
 };
 
-// 3. 브라우저 로드 즉시 초기화 실행
 window.onload = function() {
     init3DScene();
     loadPreset('cubic'); 
@@ -83,7 +82,9 @@ function init3DScene() {
     scene.add(new THREE.GridHelper(40, 40, 0x334155, 0x1e293b));
     scene.add(new THREE.AxesHelper(5));
 
-    // 시뮬레이션 이동 드론 객체 (원뿔 모양 콘 지오메트리)
+    // 정점 구체용 고유 지오메트리를 최초 1회만 캐싱하여 WebGL 리소스 중복 파괴 현상 원천 차단
+    sharedSphereGeo = new THREE.SphereGeometry(0.14, 16, 16);
+
     const droneGeo = new THREE.ConeGeometry(0.25, 0.8, 16);
     droneGeo.rotateX(Math.PI / 2); 
     const droneMat = new THREE.MeshStandardMaterial({ color: 0x34d399, roughness: 0.2 });
@@ -96,7 +97,6 @@ function init3DScene() {
     scene.add(tangentArrow);
 }
 
-// 4. 프리셋 데이터 연동 처리
 function loadPreset(key) {
     pointMeshes.forEach(m => scene.remove(m));
     pointMeshes = [];
@@ -113,7 +113,7 @@ function buildPointMeshes() {
     controlPoints.forEach((p, idx) => {
         const isEnd = (idx === 0 || idx === controlPoints.length - 1);
         const mat = new THREE.MeshStandardMaterial({
-            color: isEnd ? 0xf43f5e : 0xffffff, // 최외각 조절선 폴리곤은 흰색/빨간색 매칭
+            color: isEnd ? 0xf43f5e : 0xffffff, 
             metalness: 0.1, roughness: 0.3
         });
         const mesh = new THREE.Mesh(geo, mat);
@@ -138,52 +138,44 @@ function rebuildDragControls() {
     dragControls.addEventListener('dragend', () => orbitControls.enabled = true);
 }
 
-// 5. 드 카스텔조 분할 가이드선 초기화 및 재생성 그리기 엔진
+// 5. 드 카스텔조 분할 가이드선 재생성 엔진 (안전성 대폭 강화)
 function updateConstructionLines() {
-    // 기존에 생성되어 쌓여있던 곁가지 선분/점들 그래픽스 메모리 전면 석방
+    // 무대 위 개별 오브젝트 제거 및 고유 자원만 타겟 해제
     constructionObjects.forEach(obj => {
         scene.remove(obj);
-        if(obj.geometry) obj.geometry.dispose();
-        if(obj.material) obj.material.dispose();
+        if (obj.isLine) obj.geometry.dispose(); // 라인의 고유 BufferGeometry 해제
+        if (obj.material) obj.material.dispose(); // 각 매티리얼 자원 독립 해제
     });
     constructionObjects = [];
 
-    // 만약 상단 체크박스가 체크 해제되어 있으면 연산 및 그리기를 즉시 캔슬 중단
     if (!document.getElementById('toggle-construction').checked) return;
 
-    // 수학 모듈로부터 현재 계측 타임 t 분할 행렬 레이어 로드
     let steps = BezierMath.getConstructionSteps(controlPoints, simTime);
     
-    // 단계별 시각적 개별 분할 처리를 위한 선명한 사이버 레이저 컬러 스펙트럼 배열 (이미지 매칭 패턴)
     const layerColors = [
-        0x10b981, // Level 1: 녹색 (Q 라인)
-        0x06b6d4, // Level 2: 청록/하늘색 (R 라인)
-        0xd946ef, // Level 3: 보라/핑크색 (S 라인)
+        0x10b981, // Level 1: 녹색 (Q라인)
+        0x06b6d4, // Level 2: 청록색 (R라인)
+        0xd946ef, // Level 3: 핑크색 (S라인)
         0xf97316, // Level 4: 오렌지색
         0xa855f7  // Level 5: 자수정색
     ];
 
-    const sphereGeo = new THREE.SphereGeometry(0.14, 16, 16);
-
     steps.forEach((stepPoints, levelIdx) => {
         let currentColor = layerColors[levelIdx % layerColors.length];
 
-        // 1) 점들을 묶어 선분(Line) 구조체 빌드
+        // 1) 보간점들을 연결하는 결합 가이드선 드로잉
         if (stepPoints.length > 1) {
             const lineGeo = new THREE.BufferGeometry().setFromPoints(stepPoints);
-            const lineMat = new THREE.LineBasicMaterial({ 
-                color: currentColor,
-                linewidth: 2
-            });
+            const lineMat = new THREE.LineBasicMaterial({ color: currentColor });
             const lineObj = new THREE.Line(lineGeo, lineMat);
             scene.add(lineObj);
             constructionObjects.push(lineObj);
         }
 
-        // 2) 분할 마디점 위치마다 정밀 정점 미니 구체 매쉬 드로잉
+        // 2) 보간 마디 정점 미니 구체 배치 (전역 공유 지오메트리를 사용하여 크래시 방지)
         stepPoints.forEach((pos) => {
             const sphereMat = new THREE.MeshBasicMaterial({ color: currentColor });
-            const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
+            const sphereMesh = new THREE.Mesh(sharedSphereGeo, sphereMat);
             sphereMesh.position.copy(pos);
             scene.add(sphereMesh);
             constructionObjects.push(sphereMesh);
@@ -191,15 +183,12 @@ function updateConstructionLines() {
     });
 }
 
-// 6. 실시간 수학 연산 및 화면 갱신 코어 엔진 파이프라인
 function updateEngine() {
-    // 1) 제어점 간 최외각 가이드라인 드로잉 (회색 점선 형태)
     if (controlLine) scene.remove(controlLine);
     const lineGeo = new THREE.BufferGeometry().setFromPoints(controlPoints);
     controlLine = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0x55647a }));
     scene.add(controlLine);
 
-    // 2) 베지에 메인 메인 기하 커브 생성
     if (bezierLine) scene.remove(bezierLine);
     const curveSegments = 160;
     const computedVectors = [];
@@ -207,13 +196,11 @@ function updateEngine() {
         computedVectors.push(BezierMath.getPosition(controlPoints, i / curveSegments));
     }
     const bezierGeo = new THREE.BufferGeometry().setFromPoints(computedVectors);
-    bezierLine = new THREE.Line(bezierGeo, new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 35 }));
+    bezierLine = new THREE.Line(bezierGeo, new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 3 }));
     scene.add(bezierLine);
 
-    // 3) 드 카스텔조 분할선 동시 갱신
+    // 가이드 분할선 리렌더링 바인딩
     updateConstructionLines();
-
-    // 4) UI 스크롤 패널 데이터 리프레시
     refreshUIControls();
 }
 
@@ -272,22 +259,29 @@ function refreshUIControls() {
     document.getElementById('matrix-z').innerText = strZ;
 }
 
-// 7. 버튼 및 체크박스 인터페이스 제어 이벤트 바인딩
 function initUIEvents() {
     document.getElementById('preset-select').addEventListener('change', (e) => {
         loadPreset(e.target.value);
         resetSimulationState();
     });
 
-    // 분할 가이드 가시화 토글 제어 스위치 리스너
     document.getElementById('toggle-construction').addEventListener('change', () => {
         updateConstructionLines();
+    });
+
+    // 수동 t값 입력 슬라이더 이벤트 리스너 바인딩 (수동 제어용)
+    const tSlider = document.getElementById('input-t-value');
+    const tDisplay = document.getElementById('t-value-display');
+    tSlider.addEventListener('input', (e) => {
+        if (isSimulating) return; // 자동 비행 중일 때는 수동 인터랙션 락(Lock)
+        simTime = parseFloat(e.target.value);
+        tDisplay.innerText = simTime.toFixed(2);
+        updateEngine();
     });
 
     document.getElementById('btn-add-point').addEventListener('click', () => {
         const lastPoint = controlPoints[controlPoints.length - 1];
         const newPoint = new THREE.Vector3(lastPoint.x + 2, lastPoint.y + 1, lastPoint.z);
-        
         controlPoints.push(newPoint);
         
         pointMeshes.forEach(m => scene.remove(m));
@@ -332,7 +326,10 @@ function initUIEvents() {
 
 function resetSimulationState() {
     isSimulating = false;
-    simTime = 0.25; // 리셋 시 기본 0.25 분석 단면 위치로 복귀 정렬
+    simTime = 0.25; 
+    document.getElementById('input-t-value').value = 0.25;
+    document.getElementById('t-value-display').innerText = "0.25";
+    
     droneMesh.visible = false;
     tangentArrow.visible = false;
     const simBtn = document.getElementById('btn-toggle-sim');
@@ -341,28 +338,28 @@ function resetSimulationState() {
     updateEngine();
 }
 
-// 8. 실시간 프레임 애니메이션 루프 가동
 function animateLoop() {
     requestAnimationFrame(animateLoop);
-    
     orbitControls.update();
 
     if (isSimulating) {
         simTime += 0.003; 
         if (simTime > 1.0) simTime = 0.0; 
 
+        // 자동 구동 시 대시보드 내 UI 슬라이더 컴포넌트 위치 실시간 역동기화
+        document.getElementById('input-t-value').value = simTime;
+        document.getElementById('t-value-display').innerText = simTime.toFixed(2);
+
         const currentPos = BezierMath.getPosition(controlPoints, simTime);
         const currentTangent = BezierMath.getTangent(controlPoints, simTime);
 
         droneMesh.position.copy(currentPos);
-        
         const targetLook = new THREE.Vector3().addVectors(currentPos, currentTangent);
         droneMesh.lookAt(targetLook);
 
         tangentArrow.position.copy(currentPos);
         tangentArrow.setDirection(currentTangent);
 
-        // 시뮬레이션이 돌며 시간이 흐를 때 가이드 분할선 행렬망도 함께 파도를 치며 동적 트래킹 연산 실행
         updateConstructionLines();
     }
 
