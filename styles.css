@@ -6,7 +6,7 @@ body {
     user-select: none;
 }
 
-/* 통공형 유리 패널 스타일 테마 적용 */
+/* 사이버펑크 유리 패널 테마 스타일 */
 #info-panel, #control-panel {
     position: absolute;
     background: rgba(15, 23, 42, 0.88);
@@ -30,10 +30,10 @@ body {
     right: 20px;
     width: 400px;
     max-height: calc(100vh - 80px);
-    overflow-y: auto; /* 슬라이더가 많아지면 스크롤 처리 */
+    overflow-y: auto;
 }
 
-/* 스크롤바 커스텀 */
+/* 내부 스크롤바 커스텀 UI */
 #control-panel::-webkit-scrollbar { width: 6px; }
 #control-panel::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 
@@ -65,7 +65,7 @@ select {
     padding: 8px; border-radius: 6px; font-size: 12px; outline: none; cursor: pointer;
 }
 
-/* 버튼 구조 */
+/* 컨트롤러 버튼 양식 */
 .btn-row { display: flex; gap: 8px; }
 .btn {
     flex: 1; padding: 9px; border: none; border-radius: 6px; 
@@ -78,7 +78,7 @@ select {
 .btn-slate { background: #475569; }
 .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
-/* 동적 제어점 카드 */
+/* 동적 제어점 카드 슬라이더 레이아웃 */
 .point-card {
     background: #0f172a; border: 1px solid #1e293b;
     border-radius: 8px; padding: 10px; margin-bottom: 8px;
@@ -92,7 +92,7 @@ select {
 .axis-row input[type="range"] { flex: 1; accent-color: #38bdf8; height: 4px; }
 .axis-val { width: 45px; text-align: right; font-family: monospace; font-size: 11px; color: #38bdf8; }
 
-/* 수식 보드 */
+/* 수식 연산 컨테이너 */
 .math-label { font-size: 11px; color: #94a3b8; }
 .math-container {
     background: #090d16; padding: 10px; border-radius: 8px;
