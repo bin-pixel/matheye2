@@ -12,10 +12,8 @@ const BezierMath = {
     getPosition: function(points, t) {
         if (!points || points.length === 0) return new THREE.Vector3();
         
-        // 원본 배열 데이터를 보존하기 위해 깊은 복사 진행
         let coeffs = points.map(p => p.clone());
         
-        // 반복적 선형 보간(LERP)을 통해 최종 단일 점으로 수렴 분해
         while (coeffs.length > 1) {
             let nextCoeffs = [];
             for (let i = 0; i < coeffs.length - 1; i++) {
@@ -25,6 +23,31 @@ const BezierMath = {
             coeffs = nextCoeffs;
         }
         return coeffs[0];
+    },
+
+    /**
+     * 드 카스텔조 알고리즘의 모든 중간 선형 보간 단계별 정점들을 추출하는 함수 (시각화 전용)
+     * @param {THREE.Vector3[]} points - 제어점 벡터 배열
+     * @param {number} t - 매개변수 시간 비율
+     * @returns {THREE.Vector3[][]} 단계별 3D 좌표 다차원 배열
+     */
+    getConstructionSteps: function(points, t) {
+        if (!points || points.length <= 1) return [];
+        
+        let steps = [];
+        let coeffs = points.map(p => p.clone());
+        
+        // 반복 보간하며 생기는 모든 중간 단계 배열을 히스토리에 기록
+        while (coeffs.length > 1) {
+            let nextCoeffs = [];
+            for (let i = 0; i < coeffs.length - 1; i++) {
+                let interpolated = new THREE.Vector3().lerpVectors(coeffs[i], coeffs[i+1], t);
+                nextCoeffs.push(interpolated);
+            }
+            steps.push(nextCoeffs);
+            coeffs = nextCoeffs;
+        }
+        return steps;
     },
 
     /**
@@ -43,7 +66,6 @@ const BezierMath = {
         let pos1 = this.getPosition(points, t1);
         let pos2 = this.getPosition(points, t2);
         
-        // 두 미세 지점 간의 격차를 서브트랙션한 후 정규화(Normalize)하여 방향 벡터 반환
         return new THREE.Vector3().subVectors(pos2, pos1).normalize();
     }
 };
