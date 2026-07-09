@@ -1,5 +1,3 @@
-
-
 let scene, camera, renderer, orbitControls, dragControls;
 let controlPoints = [];      
 let pointMeshes = [];        
@@ -134,7 +132,7 @@ function rebuildDragControls() {
     dragControls.addEventListener('drag', (e) => {
         const idx = e.object.userData.index;
         controlPoints[idx].copy(e.object.position);
-        updateEngine(); 
+        updateEngine(); // 움직이는 즉시 투사체 및 B(t) 좌표 연동 업데이트 유도
     });
     dragControls.addEventListener('dragend', () => orbitControls.enabled = true);
 }
@@ -226,8 +224,7 @@ function updateEngine() {
     scene.add(bezierLine);
 
     updateConstructionLines();
-    
-
+ 
     const currentPos = BezierMath.getPosition(controlPoints, simTime);
     const currentTangent = BezierMath.getTangent(controlPoints, simTime);
 
@@ -281,7 +278,7 @@ function initUIEvents() {
     const topPanel = document.getElementById('top-control-panel');
     const bottomPanel = document.getElementById('bottom-control-panel');
 
-    // 개별 패널 단위 토글 제어 인터랙션 믹스인
+
     document.getElementById('btn-toggle-left').addEventListener('click', (e) => {
         infoPanel.classList.toggle('collapsed');
         e.target.innerText = infoPanel.classList.contains('collapsed') ? "▶" : "◀";
@@ -387,7 +384,7 @@ function animateLoop() {
     orbitControls.update();
 
     if (isSimulating) {
-        simTime += simSpeedStep;
+        simTime += simSpeedStep; 
         if (simTime > 1.0) simTime = 0.0; 
 
         document.getElementById('input-t-value').value = simTime;
