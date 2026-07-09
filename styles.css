@@ -6,7 +6,7 @@ body {
     user-select: none;
 }
 
-#info-panel, #control-panel {
+#info-panel, .right-panel {
     position: absolute;
     background: rgba(15, 23, 42, 0.88);
     border: 1px solid #2e3d52;
@@ -19,14 +19,43 @@ body {
     transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-#info-panel { top: 20px; left: 20px; width: 260px; }
-#info-panel.collapsed { transform: translateX(-320px); }
+#info-panel {
+    top: 20px;
+    left: 20px;
+    width: 260px;
+}
+#info-panel.collapsed {
+    transform: translateX(-320px);
+}
 
-#control-panel { top: 20px; right: 20px; width: 400px; max-height: calc(100vh - 80px); overflow-y: auto; }
-#control-panel.collapsed { transform: translateX(460px); }
-#control-panel::-webkit-scrollbar { width: 6px; }
-#control-panel::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+/* 우측 분리형 패널 공통 배치 규칙 */
+.right-panel {
+    right: 20px;
+    width: 400px;
+    overflow-y: auto;
+}
+.right-panel::-webkit-scrollbar { width: 6px; }
+.right-panel::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 
+/* 우측 상단 구성 (엔진 + 매개변수 행렬식) */
+#top-control-panel {
+    top: 20px;
+    max-height: calc(50vh - 30px);
+}
+#top-control-panel.collapsed {
+    transform: translateX(460px);
+}
+
+/* 우측 하단 구성 (제어점 리스트) */
+#bottom-control-panel {
+    bottom: 20px;
+    max-height: calc(50vh - 30px);
+}
+#bottom-control-panel.collapsed {
+    transform: translateX(460px);
+}
+
+/* 사이드바 접기/펼치기 핸들 공용 스타일 */
 .sidebar-toggle-btn {
     position: absolute;
     top: 20px;
@@ -44,18 +73,29 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     transition: all 0.2s;
 }
-.sidebar-toggle-btn:hover { background: #334155; color: #61dafb; }
+.sidebar-toggle-btn:hover {
+    background: #334155;
+    color: #61dafb;
+}
+
 #btn-toggle-left { right: -42px; border-radius: 0 8px 8px 0; border-left: none; }
-#btn-toggle-right { left: -42px; border-radius: 8px 0 0 8px; border-right: none; }
+#btn-toggle-top { left: -42px; border-radius: 8px 0 0 8px; border-right: none; }
+#btn-toggle-bottom { left: -42px; border-radius: 8px 0 0 8px; border-right: none; }
 
 h2 { color: #61dafb; margin: 0 0 10px 0; font-size: 18px; letter-spacing: 0.5px; }
 p { color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 0 0 14px 0; }
-.panel-section { border-bottom: 1px solid #1e293b; padding-bottom: 15px; margin-bottom: 15px; }
+
+.panel-section {
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
 .panel-section:last-child { border: none; padding: 0; margin: 0; }
 .panel-title { font-size: 11px; font-weight: 800; color: #34d399; letter-spacing: 1.5px; margin-bottom: 12px; }
 
 .guide-box { background: #0f172a; padding: 10px; border-radius: 8px; font-size: 11px; color: #cbd5e1; }
 .guide-box ul { margin: 6px 0 0 0; padding-left: 18px; }
+
 .preset-section { margin-top: 15px; display: flex; flex-direction: column; gap: 6px; }
 .preset-section label { font-size: 11px; color: #94a3b8; }
 select { background: #1e293b; border: 1px solid #475569; color: #fff; padding: 8px; border-radius: 6px; font-size: 12px; outline: none; cursor: pointer; }
@@ -88,25 +128,3 @@ select { background: #1e293b; border: 1px solid #475569; color: #fff; padding: 8
 .math-label { font-size: 11px; color: #94a3b8; }
 .math-container { background: #090d16; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #1e293b; font-family: 'Courier New', monospace; font-size: 11px; color: #38bdf8; overflow-x: auto; white-space: nowrap; }
 .highlight { color: #38bdf8; font-weight: bold; }
-
-/* 🔴 최대 20개의 가이드 계층을 지원하기 위한 고대비 컬러 매핑 클래스 */
-.text-level-0 { color: #10b981; }  /* Emerald Green */
-.text-level-1 { color: #06b6d4; }  /* Cyan */
-.text-level-2 { color: #d946ef; }  /* Fuchsia */
-.text-level-3 { color: #f97316; }  /* Orange */
-.text-level-4 { color: #a855f7; }  /* Purple */
-.text-level-5 { color: #eab308; }  /* Yellow */
-.text-level-6 { color: #ef4444; }  /* Red */
-.text-level-7 { color: #3b82f6; }  /* Blue */
-.text-level-8 { color: #84cc16; }  /* Lime */
-.text-level-9 { color: #14b8a6; }  /* Teal */
-.text-level-10 { color: #6366f1; } /* Indigo */
-.text-level-11 { color: #ec4899; } /* Pink */
-.text-level-12 { color: #f43f5e; } /* Rose */
-.text-level-13 { color: #f59e0b; } /* Amber */
-.text-level-14 { color: #0ea5e9; } /* Sky */
-.text-level-15 { color: #22c55e; } /* Light Green */
-.text-level-16 { color: #ff4500; } /* OrangeRed */
-.text-level-17 { color: #da70d6; } /* Orchid Orchid */
-.text-level-18 { color: #40e0d0; } /* Turquoise */
-.text-level-19 { color: #ffd700; } /* Gold Gold */
