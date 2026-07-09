@@ -17,12 +17,18 @@ body {
     box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     z-index: 10;
     backdrop-filter: blur(8px);
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); /* 부드러운 슬라이딩 인터랙션 */
 }
 
 #info-panel {
     top: 20px;
     left: 20px;
     width: 260px;
+}
+
+/* 왼쪽 패널이 접힐 때 왼쪽 스크린 밖으로 이동 (패널 가로폭 + 여백 감안) */
+#info-panel.collapsed {
+    transform: translateX(-320px);
 }
 
 #control-panel {
@@ -33,8 +39,48 @@ body {
     overflow-y: auto;
 }
 
+/* 오른쪽 패널이 접힐 때 오른쪽 스크린 밖으로 이동 */
+#control-panel.collapsed {
+    transform: translateX(460px);
+}
+
 #control-panel::-webkit-scrollbar { width: 6px; }
 #control-panel::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+/* 사이드바 열고 닫기 핸들 버튼 스타일 */
+.sidebar-toggle-btn {
+    position: absolute;
+    top: 20px;
+    width: 32px;
+    height: 44px;
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid #475569;
+    color: #34d399;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.2s;
+}
+.sidebar-toggle-btn:hover {
+    background: #334155;
+    color: #61dafb;
+}
+
+#btn-toggle-left {
+    right: -42px;
+    border-radius: 0 8px 8px 0;
+    border-left: none;
+}
+
+#btn-toggle-right {
+    left: -42px;
+    border-radius: 8px 0 0 8px;
+    border-right: none;
+}
 
 h2 { color: #61dafb; margin: 0 0 10px 0; font-size: 18px; letter-spacing: 0.5px; }
 p { color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 0 0 14px 0; }
@@ -120,3 +166,10 @@ select {
     color: #38bdf8; overflow-x: auto; white-space: nowrap;
 }
 .highlight { color: #38bdf8; font-weight: bold; }
+
+/* [추가] 3D 화면 속 가이드선 레이어 색상과 수식 텍스트 동기화 매칭 클래스 */
+.text-level-0 { color: #10b981; } /* Level 1 가이드선: 녹색 */
+.text-level-1 { color: #06b6d4; } /* Level 2 가이드선: 청록색 */
+.text-level-2 { color: #d946ef; } /* Level 3 가이드선: 핑크색 */
+.text-level-3 { color: #f97316; } /* Level 4 가이드선: 오렌지색 */
+.text-level-4 { color: #a855f7; } /* Level 5 가이드선: 자수정색 */
