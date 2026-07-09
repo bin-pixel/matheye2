@@ -13,6 +13,7 @@
 <body>
 
     <div id="info-panel">
+        <button id="btn-toggle-left" class="sidebar-toggle-btn">◀</button>
         <h2>3D Bézier Engine</h2>
         <p>차수의 제한이 없는 <span class="highlight">일반화된 n차 베지에 곡선</span> 매개변수 기하학 분석기입니다.</p>
         <div class="guide-box">
@@ -35,6 +36,7 @@
     </div>
 
     <div id="control-panel">
+        <button id="btn-toggle-right" class="sidebar-toggle-btn">▶</button>
         <div class="panel-section">
             <div class="panel-title">🛠️ ENGINE CONTROLLER</div>
             <div class="btn-row">
@@ -72,6 +74,8 @@
                 <div id="matrix-x">X(t) = 연산 대기 중...</div>
                 <div id="matrix-y" style="margin-top: 4px;">Y(t) = 연산 대기 중...</div>
                 <div id="matrix-z" style="margin-top: 4px;">Z(t) = 연산 대기 중...</div>
+                
+                <div id="de-casteljau-trace"></div>
             </div>
         </div>
     </div>
