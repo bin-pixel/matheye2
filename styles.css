@@ -6,7 +6,6 @@ body {
     user-select: none;
 }
 
-/* 사이버펑크 유리 패널 테마 스타일 */
 #info-panel, #control-panel {
     position: absolute;
     background: rgba(15, 23, 42, 0.88);
@@ -17,37 +16,17 @@ body {
     box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     z-index: 10;
     backdrop-filter: blur(8px);
-    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); /* 부드러운 슬라이딩 인터랙션 */
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-#info-panel {
-    top: 20px;
-    left: 20px;
-    width: 260px;
-}
+#info-panel { top: 20px; left: 20px; width: 260px; }
+#info-panel.collapsed { transform: translateX(-320px); }
 
-/* 왼쪽 패널이 접힐 때 왼쪽 스크린 밖으로 이동 (패널 가로폭 + 여백 감안) */
-#info-panel.collapsed {
-    transform: translateX(-320px);
-}
-
-#control-panel {
-    top: 20px;
-    right: 20px;
-    width: 400px;
-    max-height: calc(100vh - 80px);
-    overflow-y: auto;
-}
-
-/* 오른쪽 패널이 접힐 때 오른쪽 스크린 밖으로 이동 */
-#control-panel.collapsed {
-    transform: translateX(460px);
-}
-
+#control-panel { top: 20px; right: 20px; width: 400px; max-height: calc(100vh - 80px); overflow-y: auto; }
+#control-panel.collapsed { transform: translateX(460px); }
 #control-panel::-webkit-scrollbar { width: 6px; }
 #control-panel::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 
-/* 사이드바 열고 닫기 핸들 버튼 스타일 */
 .sidebar-toggle-btn {
     position: absolute;
     top: 20px;
@@ -65,111 +44,69 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     transition: all 0.2s;
 }
-.sidebar-toggle-btn:hover {
-    background: #334155;
-    color: #61dafb;
-}
-
-#btn-toggle-left {
-    right: -42px;
-    border-radius: 0 8px 8px 0;
-    border-left: none;
-}
-
-#btn-toggle-right {
-    left: -42px;
-    border-radius: 8px 0 0 8px;
-    border-right: none;
-}
+.sidebar-toggle-btn:hover { background: #334155; color: #61dafb; }
+#btn-toggle-left { right: -42px; border-radius: 0 8px 8px 0; border-left: none; }
+#btn-toggle-right { left: -42px; border-radius: 8px 0 0 8px; border-right: none; }
 
 h2 { color: #61dafb; margin: 0 0 10px 0; font-size: 18px; letter-spacing: 0.5px; }
 p { color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 0 0 14px 0; }
-
-.panel-section {
-    border-bottom: 1px solid #1e293b;
-    padding-bottom: 15px;
-    margin-bottom: 15px;
-}
+.panel-section { border-bottom: 1px solid #1e293b; padding-bottom: 15px; margin-bottom: 15px; }
 .panel-section:last-child { border: none; padding: 0; margin: 0; }
-
-.panel-title {
-    font-size: 11px;
-    font-weight: 800;
-    color: #34d399;
-    letter-spacing: 1.5px;
-    margin-bottom: 12px;
-}
+.panel-title { font-size: 11px; font-weight: 800; color: #34d399; letter-spacing: 1.5px; margin-bottom: 12px; }
 
 .guide-box { background: #0f172a; padding: 10px; border-radius: 8px; font-size: 11px; color: #cbd5e1; }
 .guide-box ul { margin: 6px 0 0 0; padding-left: 18px; }
-
 .preset-section { margin-top: 15px; display: flex; flex-direction: column; gap: 6px; }
 .preset-section label { font-size: 11px; color: #94a3b8; }
-select {
-    background: #1e293b; border: 1px solid #475569; color: #fff;
-    padding: 8px; border-radius: 6px; font-size: 12px; outline: none; cursor: pointer;
-}
+select { background: #1e293b; border: 1px solid #475569; color: #fff; padding: 8px; border-radius: 6px; font-size: 12px; outline: none; cursor: pointer; }
 
 .btn-row { display: flex; gap: 8px; }
-.btn {
-    flex: 1; padding: 9px; border: none; border-radius: 6px; 
-    font-weight: bold; font-size: 12px; cursor: pointer; transition: all 0.2s;
-    color: white; text-align: center;
-}
+.btn { flex: 1; padding: 9px; border: none; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; transition: all 0.2s; color: white; text-align: center; }
 .btn-green { background: linear-gradient(135deg, #10b981, #047857); }
 .btn-red { background: linear-gradient(135deg, #ef4444, #b91c1c); }
 .btn-blue { background: linear-gradient(135deg, #0284c7, #0369a1); }
 .btn-slate { background: #475569; }
 .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
 
-/* 시각화 및 수동 제어 통합 컨테이너 */
-.toggle-container {
-    margin-top: 12px;
-    background: #0f172a;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #1e293b;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
+.toggle-container { margin-top: 12px; background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #1e293b; display: flex; flex-direction: column; gap: 10px; }
 .toggle-row { display: flex; align-items: center; gap: 10px; }
-.toggle-row input[type="checkbox"] {
-    accent-color: #34d399; width: 16px; height: 16px; cursor: pointer;
-}
+.toggle-row input[type="checkbox"] { accent-color: #34d399; width: 16px; height: 16px; cursor: pointer; }
 .toggle-row label { font-size: 12px; color: #cbd5e1; cursor: pointer; }
 
-/* 수동 t값 조절 슬라이더 UI */
 #t-slider-wrapper { display: flex; align-items: center; gap: 8px; width: 100%; }
 #t-slider-wrapper label { font-size: 11px; color: #94a3b8; font-family: monospace; width: 55px; }
 #t-slider-wrapper input[type="range"] { flex: 1; accent-color: #34d399; height: 4px; cursor: pointer; }
 #t-slider-wrapper span { font-family: monospace; font-size: 11px; color: #34d399; width: 30px; text-align: right; }
 
-.point-card {
-    background: #0f172a; border: 1px solid #1e293b;
-    border-radius: 8px; padding: 10px; margin-bottom: 8px;
-}
-.point-header {
-    display: flex; justify-content: space-between; font-size: 11px;
-    font-family: monospace; font-weight: bold; margin-bottom: 6px;
-}
+.point-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+.point-header { display: flex; justify-content: space-between; font-size: 11px; font-family: monospace; font-weight: bold; margin-bottom: 6px; }
 .axis-row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
 .axis-row label { width: 15px; font-size: 11px; font-weight: bold; font-family: monospace; }
 .axis-row input[type="range"] { flex: 1; accent-color: #38bdf8; height: 4px; }
 .axis-val { width: 45px; text-align: right; font-family: monospace; font-size: 11px; color: #38bdf8; }
 
 .math-label { font-size: 11px; color: #94a3b8; }
-.math-container {
-    background: #090d16; padding: 10px; border-radius: 8px;
-    margin-top: 8px; border: 1px solid #1e293b;
-    font-family: 'Courier New', monospace; font-size: 11px;
-    color: #38bdf8; overflow-x: auto; white-space: nowrap;
-}
+.math-container { background: #090d16; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #1e293b; font-family: 'Courier New', monospace; font-size: 11px; color: #38bdf8; overflow-x: auto; white-space: nowrap; }
 .highlight { color: #38bdf8; font-weight: bold; }
 
-/* [추가] 3D 화면 속 가이드선 레이어 색상과 수식 텍스트 동기화 매칭 클래스 */
-.text-level-0 { color: #10b981; } /* Level 1 가이드선: 녹색 */
-.text-level-1 { color: #06b6d4; } /* Level 2 가이드선: 청록색 */
-.text-level-2 { color: #d946ef; } /* Level 3 가이드선: 핑크색 */
-.text-level-3 { color: #f97316; } /* Level 4 가이드선: 오렌지색 */
-.text-level-4 { color: #a855f7; } /* Level 5 가이드선: 자수정색 */
+/* 🔴 최대 20개의 가이드 계층을 지원하기 위한 고대비 컬러 매핑 클래스 */
+.text-level-0 { color: #10b981; }  /* Emerald Green */
+.text-level-1 { color: #06b6d4; }  /* Cyan */
+.text-level-2 { color: #d946ef; }  /* Fuchsia */
+.text-level-3 { color: #f97316; }  /* Orange */
+.text-level-4 { color: #a855f7; }  /* Purple */
+.text-level-5 { color: #eab308; }  /* Yellow */
+.text-level-6 { color: #ef4444; }  /* Red */
+.text-level-7 { color: #3b82f6; }  /* Blue */
+.text-level-8 { color: #84cc16; }  /* Lime */
+.text-level-9 { color: #14b8a6; }  /* Teal */
+.text-level-10 { color: #6366f1; } /* Indigo */
+.text-level-11 { color: #ec4899; } /* Pink */
+.text-level-12 { color: #f43f5e; } /* Rose */
+.text-level-13 { color: #f59e0b; } /* Amber */
+.text-level-14 { color: #0ea5e9; } /* Sky */
+.text-level-15 { color: #22c55e; } /* Light Green */
+.text-level-16 { color: #ff4500; } /* OrangeRed */
+.text-level-17 { color: #da70d6; } /* Orchid Orchid */
+.text-level-18 { color: #40e0d0; } /* Turquoise */
+.text-level-19 { color: #ffd700; } /* Gold Gold */
