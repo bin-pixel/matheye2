@@ -1,22 +1,19 @@
 /**
- * 메인 어플리케이션 구동 및 3D 그래픽 인프라 제어 스크립트
+ * 메인 어플리케이션 구동 및 3D 그래픽 인프라 제어 스크립트 (성능 및 직관성 극대화 버전)
  */
 
-// 1. 전역 시스템 변수 정의
 let scene, camera, renderer, orbitControls, dragControls;
 let controlPoints = [];      
 let pointMeshes = [];        
 let controlLine = null;      
 let bezierLine = null;       
 
-// 가이드라인 구체 렌더링 최적화를 위한 전역 공유 지오메트리 변수 (버그 해결 핵심)
 let sharedSphereGeo = null;
 let constructionObjects = [];
 
-// 시뮬레이션 및 수동 추적 제어 변수
 let droneMesh = null;
 let tangentArrow = null;
-let simTime = 0.25;          // 초기 기본 분석 단면 t 위치 
+let simTime = 0.25;          
 let isSimulating = false;
 
 const PRESETS = {
@@ -52,6 +49,14 @@ const PRESETS = {
     ]
 };
 
+// 🎨 CSS 클래스와 정밀 결합된 20종류의 고대비 헥사 레이어 컬러맵
+const LAYER_COLORS = [
+    0x10b981, 0x06b6d4, 0xd946ef, 0xf97316, 0xa855f7,
+    0xeab308, 0xef4444, 0x3b82f6, 0x84cc16, 0x14b8a6,
+    0x6366f1, 0xec4899, 0xf43f5e, 0xf59e0b, 0x0ea5e9,
+    0x22c55e, 0xff4500, 0xda70d6, 0x40e0d0, 0xffd700
+];
+
 window.onload = function() {
     init3DScene();
     loadPreset('cubic'); 
@@ -82,7 +87,6 @@ function init3DScene() {
     scene.add(new THREE.GridHelper(40, 40, 0x334155, 0x1e293b));
     scene.add(new THREE.AxesHelper(5));
 
-    // 정점 구체용 고유 지오메트리를 최초 1회만 캐싱하여 WebGL 리소스 중복 파괴 현상 원천 차단
     sharedSphereGeo = new THREE.SphereGeometry(0.14, 16, 16);
 
     const droneGeo = new THREE.ConeGeometry(0.25, 0.8, 16);
@@ -100,11 +104,11 @@ function init3DScene() {
 function loadPreset(key) {
     pointMeshes.forEach(m => scene.remove(m));
     pointMeshes = [];
-    
     controlPoints = PRESETS[key].map(v => v.clone());
     
     buildPointMeshes();
     rebuildDragControls();
+    buildSlidersUI(); // 프리셋 변동 시 최초 1회만 DOM 트리 빌드 (랙 방지)
     updateEngine();
 }
 
@@ -126,7 +130,6 @@ function buildPointMeshes() {
 
 function rebuildDragControls() {
     if (dragControls) dragControls.dispose();
-    
     dragControls = new THREE.DragControls(pointMeshes, camera, renderer.domElement);
     
     dragControls.addEventListener('dragstart', () => orbitControls.enabled = false);
@@ -136,6 +139,46 @@ function rebuildDragControls() {
         updateEngine();
     });
     dragControls.addEventListener('dragend', () => orbitControls.enabled = true);
+}
+
+/**
+ * [성능 최적화 핵심] 매 프레임 UI를 파괴하지 않도록 슬라이더 구조를 단 1회만 빌드하는 독립 함수
+ */
+function buildSlidersUI() {
+    const container = document.getElementById('dynamic-sliders-container');
+    container.innerHTML = '';
+    
+    controlPoints.forEach((p, idx) => {
+        const isEnd = (idx === 0 || idx === controlPoints.length - 1);
+        const titleColor = isEnd ? '#fda4af' : '#ffffff';
+        const card = document.createElement('div');
+        card.className = 'point-card';
+        card.innerHTML = `
+            <div class="point-header" style="color: ${titleColor}">POINT P${idx} ${isEnd ? '(시작/끝 점)' : '(조절점)'}</div>
+            ${['x','y','z'].map(axis => `
+                <div class="axis-row">
+                    <label>${axis.toUpperCase()}:</label>
+                    <input type="range" min="-10" max="10" step="0.1" value="${p[axis].toFixed(1)}" data-idx="${idx}" data-axis="${axis}" class="coord-slider">
+                    <span class="axis-val">${p[axis].toFixed(1)}</span>
+                </div>
+            `).join('')}
+        `;
+        container.appendChild(card);
+    });
+
+    document.querySelectorAll('.coord-slider').forEach(slider => {
+        slider.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.dataset.idx);
+            const axis = e.target.dataset.axis;
+            const val = parseFloat(e.target.value);
+            
+            controlPoints[idx][axis] = val;
+            pointMeshes[idx].position[axis] = val;
+            
+            e.target.nextElementSibling.innerText = val.toFixed(1);
+            updateEngine();
+        });
+    });
 }
 
 function updateConstructionLines() {
@@ -149,17 +192,9 @@ function updateConstructionLines() {
     if (!document.getElementById('toggle-construction').checked) return;
 
     let steps = BezierMath.getConstructionSteps(controlPoints, simTime);
-    
-    const layerColors = [
-        0x10b981, // Level 1: 녹색 (Q라인)
-        0x06b6d4, // Level 2: 청록색 (R라인)
-        0xd946ef, // Level 3: 핑크색 (S라인)
-        0xf97316, // Level 4: 오렌지색
-        0xa855f7  // Level 5: 자수정색
-    ];
 
     steps.forEach((stepPoints, levelIdx) => {
-        let currentColor = layerColors[levelIdx % layerColors.length];
+        let currentColor = LAYER_COLORS[levelIdx % LAYER_COLORS.length];
 
         if (stepPoints.length > 1) {
             const lineGeo = new THREE.BufferGeometry().setFromPoints(stepPoints);
@@ -203,47 +238,19 @@ function refreshUIControls() {
     document.getElementById('curve-degree').innerText = controlPoints.length - 1;
     document.getElementById('points-count').innerText = controlPoints.length;
 
-    const container = document.getElementById('dynamic-sliders-container');
-    
-    if (!container.contains(document.activeElement)) {
-        container.innerHTML = '';
-        controlPoints.forEach((p, idx) => {
-            const isEnd = (idx === 0 || idx === controlPoints.length - 1);
-            const titleColor = isEnd ? '#fda4af' : '#ffffff';
-            const card = document.createElement('div');
-            card.className = 'point-card';
-            card.innerHTML = `
-                <div class="point-header" style="color: ${titleColor}">POINT P${idx} ${isEnd ? '(시작/끝 정점)' : '(조절 제어점)'}</div>
-                ${['x','y','z'].map(axis => `
-                    <div class="axis-row">
-                        <label>${axis.toUpperCase()}:</label>
-                        <input type="range" min="-10" max="10" step="0.1" value="${p[axis].toFixed(1)}" data-idx="${idx}" data-axis="${axis}" class="coord-slider">
-                        <span class="axis-val">${p[axis].toFixed(1)}</span>
-                    </div>
-                `).join('')}
-            `;
-            container.appendChild(card);
+    // [랙 최적화] 슬라이더 자체를 매번 지우지 않고 3D 마우스 조작 시 수치 컴포넌트만 정밀 타겟 갱신
+    controlPoints.forEach((p, idx) => {
+        ['x','y','z'].forEach(axis => {
+            const slider = document.querySelector(`.coord-slider[data-idx="${idx}"][data-axis="${axis}"]`);
+            if (slider && document.activeElement !== slider) {
+                slider.value = p[axis].toFixed(1);
+                slider.nextElementSibling.innerText = p[axis].toFixed(1);
+            }
         });
+    });
 
-        document.querySelectorAll('.coord-slider').forEach(slider => {
-            slider.addEventListener('input', (e) => {
-                const idx = parseInt(e.target.dataset.idx);
-                const axis = e.target.dataset.axis;
-                const val = parseFloat(e.target.value);
-                
-                controlPoints[idx][axis] = val;
-                pointMeshes[idx].position[axis] = val;
-                
-                e.target.nextElementSibling.innerText = val.toFixed(1);
-                updateEngine();
-            });
-        });
-    }
-
-    // 1) 기존 Bernstein 다항식 행렬 출력 유지
     let strX = "X(t) = ", strY = "Y(t) = ", strZ = "Z(t) = ";
     const n = controlPoints.length - 1;
-    
     controlPoints.forEach((p, i) => {
         let weightStr = `·J_${i}^${n}(t)`;
         strX += `${i > 0 ? ' + ' : ''}${p.x.toFixed(1)}${weightStr}`;
@@ -254,33 +261,48 @@ function refreshUIControls() {
     document.getElementById('matrix-y').innerText = strY;
     document.getElementById('matrix-z').innerText = strZ;
 
-    // 2) [신규 연동 대책] 3D 화면 속 분할선 레이어 색상과 결합된 실시간 좌표 보간 추적 연산기
+    // 🎯 [시각 직관성 전면 개편] 복잡한 개별 좌표 나열을 버리고 수렴 알고리즘의 직관적 진행 상황 요약 제공
     const traceContainer = document.getElementById('de-casteljau-trace');
     if (traceContainer) {
-        let traceHtml = `<div style="color: #94a3b8; font-weight: bold; margin: 12px 0 4px 0; border-top: 1px dashed #1e293b; padding-top: 8px;">📍 실시간 분할선 좌표 보간 계층 (t = ${simTime.toFixed(2)})</div>`;
-        let steps = BezierMath.getConstructionSteps(controlPoints, simTime);
-        const layerNames = ["녹색선 분할점 (Q)", "청록선 분할점 (R)", "핑크선 분할점 (S)", "오렌지선 분할점", "자수정선 분할점"];
+        let ratioLeft = (simTime * 100).toFixed(0);
+        let ratioRight = (100 - ratioLeft);
         
+        let traceHtml = `
+            <div style="color: #cbd5e1; font-weight: bold; margin: 14px 0 6px 0; border-top: 1px dashed #2e3d52; padding-top: 10px; font-size: 11px;">
+                🔍 대 카스텔조 기하학적 보간 흐름
+            </div>
+            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 8px; white-space: normal; line-height: 1.4;">
+                각 단계마다 선분들을 <span style="color: #34d399; font-weight: bold;">${ratioLeft} : ${ratioRight}</span> 내분점으로 쪼개며 점의 개수를 점진적으로 축소합니다.
+            </div>
+        `;
+        
+        let steps = BezierMath.getConstructionSteps(controlPoints, simTime);
         steps.forEach((stepPoints, levelIdx) => {
-            let name = layerNames[levelIdx % layerNames.length];
-            let levelClass = `text-level-${levelIdx % 5}`;
-            traceHtml += `<div class="${levelClass}" style="margin-top: 4px; font-size: 10px;">• ${name}:<br/>`;
-            stepPoints.forEach((pos, ptIdx) => {
-                traceHtml += `&nbsp;&nbsp;[${ptIdx}] (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})<br/>`;
-            });
-            traceHtml += `</div>`;
+            let levelClass = `text-level-${levelIdx % 20}`;
+            let initialCount = (levelIdx === 0) ? controlPoints.length : steps[levelIdx - 1].length;
+            
+            traceHtml += `
+                <div style="margin-top: 5px; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                    <span class="${levelClass}" style="font-weight: bold;">[계층 ${levelIdx + 1}]</span>
+                    <span style="color: #cbd5e1;">기존 점 ${initialCount}개 ➔ <b style="color: #61dafb;">보간 조절점 ${stepPoints.length}개로 압축</b></span>
+                </div>
+            `;
         });
 
         if (steps.length > 0) {
             let finalPos = BezierMath.getPosition(controlPoints, simTime);
-            traceHtml += `<div style="color: #34d399; margin-top: 6px; font-weight: bold; font-size: 11px;">• 최종 곡선 도달점 B(t):<br/>&nbsp;&nbsp;(${finalPos.x.toFixed(1)}, ${finalPos.y.toFixed(1)}, ${finalPos.z.toFixed(1)})</div>`;
+            traceHtml += `
+                <div style="color: #34d399; margin-top: 12px; font-weight: bold; font-size: 12px; border-top: 1px solid #1e293b; padding-top: 8px; white-space: normal;">
+                    🎯최종 수렴 곡선 점 B(t):<br/>
+                    <span style="font-family: monospace; color: #fff;">(${finalPos.x.toFixed(2)}, ${finalPos.y.toFixed(2)}, ${finalPos.z.toFixed(2)})</span>
+                </div>
+            `;
         }
         traceContainer.innerHTML = traceHtml;
     }
 }
 
 function initUIEvents() {
-    // [신규 수정 사항] 좌우 사이드바를 유연하게 닫았다 열 수 있는 인터랙션 바인딩
     const infoPanel = document.getElementById('info-panel');
     const controlPanel = document.getElementById('control-panel');
 
@@ -321,6 +343,7 @@ function initUIEvents() {
         pointMeshes = [];
         buildPointMeshes();
         rebuildDragControls();
+        buildSlidersUI(); // 구조 개수 변동 시 재생성
         updateEngine();
         resetSimulationState();
     });
@@ -336,6 +359,7 @@ function initUIEvents() {
         pointMeshes = [];
         buildPointMeshes();
         rebuildDragControls();
+        buildSlidersUI(); // 구조 개수 변동 시 재생성
         updateEngine();
         resetSimulationState();
     });
@@ -393,6 +417,7 @@ function animateLoop() {
         tangentArrow.setDirection(currentTangent);
 
         updateConstructionLines();
+        refreshUIControls(); // 시뮬레이션 도중 수치 연동 최적화 반영
     }
 
     renderer.render(scene, camera);
