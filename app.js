@@ -1,6 +1,4 @@
-/**
- * 메인 어플리케이션 구동 및 3D 그래픽 인프라 제어 스크립트 (성능 및 직관성 극대화 버전)
- */
+
 
 let scene, camera, renderer, orbitControls, dragControls;
 let controlPoints = [];      
@@ -15,6 +13,7 @@ let droneMesh = null;
 let tangentArrow = null;
 let simTime = 0.25;          
 let isSimulating = false;
+let simSpeedStep = 0.003; 
 
 const PRESETS = {
     cubic: [
@@ -49,7 +48,6 @@ const PRESETS = {
     ]
 };
 
-// 🎨 CSS 클래스와 정밀 결합된 20종류의 고대비 헥사 레이어 컬러맵
 const LAYER_COLORS = [
     0x10b981, 0x06b6d4, 0xd946ef, 0xf97316, 0xa855f7,
     0xeab308, 0xef4444, 0x3b82f6, 0x84cc16, 0x14b8a6,
@@ -93,11 +91,11 @@ function init3DScene() {
     droneGeo.rotateX(Math.PI / 2); 
     const droneMat = new THREE.MeshStandardMaterial({ color: 0x34d399, roughness: 0.2 });
     droneMesh = new THREE.Mesh(droneGeo, droneMat);
-    droneMesh.visible = false;
+    droneMesh.visible = true; 
     scene.add(droneMesh);
 
     tangentArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 1.5, 0x38bdf8, 0.4, 0.2);
-    tangentArrow.visible = false;
+    tangentArrow.visible = true; 
     scene.add(tangentArrow);
 }
 
@@ -108,7 +106,7 @@ function loadPreset(key) {
     
     buildPointMeshes();
     rebuildDragControls();
-    buildSlidersUI(); // 프리셋 변동 시 최초 1회만 DOM 트리 빌드 (랙 방지)
+    buildSlidersUI(); 
     updateEngine();
 }
 
@@ -136,14 +134,11 @@ function rebuildDragControls() {
     dragControls.addEventListener('drag', (e) => {
         const idx = e.object.userData.index;
         controlPoints[idx].copy(e.object.position);
-        updateEngine();
+        updateEngine(); 
     });
     dragControls.addEventListener('dragend', () => orbitControls.enabled = true);
 }
 
-/**
- * [성능 최적화 핵심] 매 프레임 UI를 파괴하지 않도록 슬라이더 구조를 단 1회만 빌드하는 독립 함수
- */
 function buildSlidersUI() {
     const container = document.getElementById('dynamic-sliders-container');
     container.innerHTML = '';
@@ -231,6 +226,18 @@ function updateEngine() {
     scene.add(bezierLine);
 
     updateConstructionLines();
+    
+
+    const currentPos = BezierMath.getPosition(controlPoints, simTime);
+    const currentTangent = BezierMath.getTangent(controlPoints, simTime);
+
+    droneMesh.position.copy(currentPos);
+    const targetLook = new THREE.Vector3().addVectors(currentPos, currentTangent);
+    droneMesh.lookAt(targetLook);
+
+    tangentArrow.position.copy(currentPos);
+    tangentArrow.setDirection(currentTangent);
+
     refreshUIControls();
 }
 
@@ -238,7 +245,7 @@ function refreshUIControls() {
     document.getElementById('curve-degree').innerText = controlPoints.length - 1;
     document.getElementById('points-count').innerText = controlPoints.length;
 
-    // [랙 최적화] 슬라이더 자체를 매번 지우지 않고 3D 마우스 조작 시 수치 컴포넌트만 정밀 타겟 갱신
+
     controlPoints.forEach((p, idx) => {
         ['x','y','z'].forEach(axis => {
             const slider = document.querySelector(`.coord-slider[data-idx="${idx}"][data-axis="${axis}"]`);
@@ -261,59 +268,33 @@ function refreshUIControls() {
     document.getElementById('matrix-y').innerText = strY;
     document.getElementById('matrix-z').innerText = strZ;
 
-    // 🎯 [시각 직관성 전면 개편] 복잡한 개별 좌표 나열을 버리고 수렴 알고리즘의 직관적 진행 상황 요약 제공
-    const traceContainer = document.getElementById('de-casteljau-trace');
-    if (traceContainer) {
-        let ratioLeft = (simTime * 100).toFixed(0);
-        let ratioRight = (100 - ratioLeft);
-        
-        let traceHtml = `
-            <div style="color: #cbd5e1; font-weight: bold; margin: 14px 0 6px 0; border-top: 1px dashed #2e3d52; padding-top: 10px; font-size: 11px;">
-                🔍 대 카스텔조 기하학적 보간 흐름
-            </div>
-            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 8px; white-space: normal; line-height: 1.4;">
-                각 단계마다 선분들을 <span style="color: #34d399; font-weight: bold;">${ratioLeft} : ${ratioRight}</span> 내분점으로 쪼개며 점의 개수를 점진적으로 축소합니다.
-            </div>
-        `;
-        
-        let steps = BezierMath.getConstructionSteps(controlPoints, simTime);
-        steps.forEach((stepPoints, levelIdx) => {
-            let levelClass = `text-level-${levelIdx % 20}`;
-            let initialCount = (levelIdx === 0) ? controlPoints.length : steps[levelIdx - 1].length;
-            
-            traceHtml += `
-                <div style="margin-top: 5px; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
-                    <span class="${levelClass}" style="font-weight: bold;">[계층 ${levelIdx + 1}]</span>
-                    <span style="color: #cbd5e1;">기존 점 ${initialCount}개 ➔ <b style="color: #61dafb;">보간 조절점 ${stepPoints.length}개로 압축</b></span>
-                </div>
-            `;
-        });
 
-        if (steps.length > 0) {
-            let finalPos = BezierMath.getPosition(controlPoints, simTime);
-            traceHtml += `
-                <div style="color: #34d399; margin-top: 12px; font-weight: bold; font-size: 12px; border-top: 1px solid #1e293b; padding-top: 8px; white-space: normal;">
-                    🎯최종 수렴 곡선 점 B(t):<br/>
-                    <span style="font-family: monospace; color: #fff;">(${finalPos.x.toFixed(2)}, ${finalPos.y.toFixed(2)}, ${finalPos.z.toFixed(2)})</span>
-                </div>
-            `;
-        }
-        traceContainer.innerHTML = traceHtml;
+    const finalPos = BezierMath.getPosition(controlPoints, simTime);
+    const coordElem = document.getElementById('final-b-coordinates');
+    if (coordElem) {
+        coordElem.innerText = `(${finalPos.x.toFixed(2)}, ${finalPos.y.toFixed(2)}, ${finalPos.z.toFixed(2)})`;
     }
 }
 
 function initUIEvents() {
     const infoPanel = document.getElementById('info-panel');
-    const controlPanel = document.getElementById('control-panel');
+    const topPanel = document.getElementById('top-control-panel');
+    const bottomPanel = document.getElementById('bottom-control-panel');
 
+    // 개별 패널 단위 토글 제어 인터랙션 믹스인
     document.getElementById('btn-toggle-left').addEventListener('click', (e) => {
         infoPanel.classList.toggle('collapsed');
         e.target.innerText = infoPanel.classList.contains('collapsed') ? "▶" : "◀";
     });
 
-    document.getElementById('btn-toggle-right').addEventListener('click', (e) => {
-        controlPanel.classList.toggle('collapsed');
-        e.target.innerText = controlPanel.classList.contains('collapsed') ? "◀" : "▶";
+    document.getElementById('btn-toggle-top').addEventListener('click', (e) => {
+        topPanel.classList.toggle('collapsed');
+        e.target.innerText = topPanel.classList.contains('collapsed') ? "◀" : "▶";
+    });
+
+    document.getElementById('btn-toggle-bottom').addEventListener('click', (e) => {
+        bottomPanel.classList.toggle('collapsed');
+        e.target.innerText = bottomPanel.classList.contains('collapsed') ? "◀" : "▶";
     });
 
     document.getElementById('preset-select').addEventListener('change', (e) => {
@@ -334,6 +315,16 @@ function initUIEvents() {
         updateEngine();
     });
 
+
+    const speedSlider = document.getElementById('input-sim-speed');
+    const speedDisplay = document.getElementById('speed-value-display');
+    speedSlider.addEventListener('input', (e) => {
+        simSpeedStep = parseFloat(e.target.value);
+
+        let multiplier = (simSpeedStep / 0.003).toFixed(1);
+        speedDisplay.innerText = multiplier + "x";
+    });
+
     document.getElementById('btn-add-point').addEventListener('click', () => {
         const lastPoint = controlPoints[controlPoints.length - 1];
         const newPoint = new THREE.Vector3(lastPoint.x + 2, lastPoint.y + 1, lastPoint.z);
@@ -343,7 +334,7 @@ function initUIEvents() {
         pointMeshes = [];
         buildPointMeshes();
         rebuildDragControls();
-        buildSlidersUI(); // 구조 개수 변동 시 재생성
+        buildSlidersUI(); 
         updateEngine();
         resetSimulationState();
     });
@@ -359,7 +350,7 @@ function initUIEvents() {
         pointMeshes = [];
         buildPointMeshes();
         rebuildDragControls();
-        buildSlidersUI(); // 구조 개수 변동 시 재생성
+        buildSlidersUI(); 
         updateEngine();
         resetSimulationState();
     });
@@ -370,8 +361,6 @@ function initUIEvents() {
         if(isSimulating) {
             simBtn.innerText = "⏸ 시뮬레이션 일시정지";
             simBtn.style.background = "linear-gradient(135deg, #eab308, #ca8a04)";
-            droneMesh.visible = true;
-            tangentArrow.visible = true;
         } else {
             simBtn.innerText = "▶ 투사체 시뮬레이션 시작";
             simBtn.style.background = "linear-gradient(135deg, #0284c7, #0369a1)";
@@ -387,8 +376,6 @@ function resetSimulationState() {
     document.getElementById('input-t-value').value = 0.25;
     document.getElementById('t-value-display').innerText = "0.25";
     
-    droneMesh.visible = false;
-    tangentArrow.visible = false;
     const simBtn = document.getElementById('btn-toggle-sim');
     simBtn.innerText = "▶ 투사체 시뮬레이션 시작";
     simBtn.style.background = "linear-gradient(135deg, #0284c7, #0369a1)";
@@ -400,7 +387,7 @@ function animateLoop() {
     orbitControls.update();
 
     if (isSimulating) {
-        simTime += 0.003; 
+        simTime += simSpeedStep;
         if (simTime > 1.0) simTime = 0.0; 
 
         document.getElementById('input-t-value').value = simTime;
@@ -417,7 +404,7 @@ function animateLoop() {
         tangentArrow.setDirection(currentTangent);
 
         updateConstructionLines();
-        refreshUIControls(); // 시뮬레이션 도중 수치 연동 최적화 반영
+        refreshUIControls(); 
     }
 
     renderer.render(scene, camera);
