@@ -15,9 +15,9 @@
     <div id="info-panel">
         <button id="btn-toggle-left" class="sidebar-toggle-btn">◀</button>
         <h2>3D Bézier Engine</h2>
-        <p>차수의 제한이 없는 <span class="highlight">일반화된 n차 베지에 곡선</span> 매개변수 기하학 분석기입니다.</p>
+        <p>차수의 제한이 없는 <span class="highlight">일반화된 n차 베지에 곡선</span> 매개변수 기하학 분석기</p>
         <div class="guide-box">
-            <strong>조작:</strong>
+            <strong>🖱️ 뷰포트 조작:</strong>
             <ul>
                 <li><span>화면 드래그:</span> 3D 회전</li>
                 <li><span>마우스 휠:</span> 확대/축소</li>
@@ -25,7 +25,7 @@
             </ul>
         </div>
         <div class="preset-section">
-            <label for="preset-select">🔮 구조 기하학 프리셋:</label>
+            <label for="preset-select"> 구조 기하학 프리셋:</label>
             <select id="preset-select">
                 <option value="cubic">기본 3차 궤적 (4개 점)</option>
                 <option value="helix">3D 헬릭스 스프링 (7개 점)</option>
@@ -35,10 +35,11 @@
         </div>
     </div>
 
-    <div id="control-panel">
-        <button id="btn-toggle-right" class="sidebar-toggle-btn">▶</button>
+    <div id="top-control-panel" class="right-panel">
+        <button id="btn-toggle-top" class="sidebar-toggle-btn">▶</button>
+        
         <div class="panel-section">
-            <div class="panel-title"> ENGINE CONTROLLER</div>
+            <div class="panel-title"> 엔진 컨트롤러 (ENGINE CONTROLLER)</div>
             <div class="btn-row">
                 <button id="btn-add-point" class="btn btn-green">+ 제어점 추가</button>
                 <button id="btn-del-point" class="btn btn-red">- 마지막 점 삭제</button>
@@ -51,31 +52,45 @@
             <div class="toggle-container">
                 <div class="toggle-row">
                     <input type="checkbox" id="toggle-construction" checked>
-                    <label for="toggle-construction">단계별 분할 가이드선 표시 (De Casteljau)</label>
+                    <label for="toggle-construction">단계별 분할 가이드선 표시</label>
                 </div>
                 <div id="t-slider-wrapper">
                     <label>Time (t):</label>
                     <input type="range" id="input-t-value" min="0" max="1" step="0.01" value="0.25">
                     <span id="t-value-display">0.25</span>
                 </div>
+                <div id="speed-slider-wrapper" style="display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 4px;">
+                    <label style="font-size: 11px; color: #94a3b8; width: 55px;">시행 속도:</label>
+                    <input type="range" id="input-sim-speed" min="0.001" max="0.01" step="0.001" value="0.003" style="flex: 1; accent-color: #38bdf8; height: 4px; cursor: pointer;">
+                    <span id="speed-value-display" style="font-family: monospace; font-size: 11px; color: #38bdf8; width: 30px; text-align: right;">1x</span>
+                </div>
             </div>
         </div>
 
         <div class="panel-section">
-            <div class="panel-title"> CONTROL POINTS & SLIDERS</div>
-            <div id="dynamic-sliders-container"></div>
-        </div>
-
-        <div class="panel-section">
-            <div class="panel-title"> PARAMETRIC MATRIX</div>
+            <div class="panel-title">📐 매개변수 행렬식 (PARAMETRIC MATRIX)</div>
             <div class="math-label">곡선 차수: <span id="curve-degree" class="highlight">3</span>차 식 (Points: <span id="points-count">4</span>)</div>
             <div class="math-container">
                 <div id="matrix-x">X(t) = 연산 대기 중...</div>
                 <div id="matrix-y" style="margin-top: 4px;">Y(t) = 연산 대기 중...</div>
                 <div id="matrix-z" style="margin-top: 4px;">Z(t) = 연산 대기 중...</div>
                 
-                <div id="de-casteljau-trace"></div>
+                <div id="final-b-point-container" style="margin-top: 12px; border-top: 1px dashed #2e3d52; padding-top: 10px; white-space: normal;">
+                    <div style="color: #34d399; font-weight: bold; font-size: 11px;">🎯 최종 수렴 곡선 점 B(t):</div>
+                    <div id="final-b-coordinates" style="font-family: monospace; color: #ffffff; font-size: 12px; margin-top: 2px;">(0.00, 0.00, 0.00)</div>
+                    <p style="color: #64748b; font-size: 10px; line-height: 1.3; margin: 6px 0 0 0;">
+                        * B(t)는 모든 제어점의 위치와 가중치를 결합하여 시간 t에 따라 투사체가 실제로 위치하게 되는 곡선 위의 최종 3D 좌표입니다.
+                    </p>
+                </div>
             </div>
+        </div>
+    </div>
+
+    <div id="bottom-control-panel" class="right-panel">
+        <button id="btn-toggle-bottom" class="sidebar-toggle-btn">▶</button>
+        <div class="panel-section" style="margin-bottom: 0; padding-bottom: 0; border: none;">
+            <div class="panel-title">📍 제어점 및 슬라이더 (CONTROL POINTS & SLIDERS)</div>
+            <div id="dynamic-sliders-container"></div>
         </div>
     </div>
 
