@@ -1,6 +1,4 @@
-/**
- * 3D 베지에 곡선 수학 연산 전용 스크립트
- */
+
 const BezierMath = {
     getPosition: function(points, t) {
         if (!points || points.length === 0) return new THREE.Vector3();
