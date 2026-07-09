@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>고급 3D N차 베지에 곡선 시뮬레이터</title>
+    <title>베지에 곡선 시뮬레이터</title>
     <link rel="stylesheet" href="styles.css">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -17,7 +17,7 @@
         <h2>3D Bézier Engine</h2>
         <p>차수의 제한이 없는 <span class="highlight">일반화된 n차 베지에 곡선</span> 매개변수 기하학 분석기입니다.</p>
         <div class="guide-box">
-            <strong>🖱️ 뷰포트 조작:</strong>
+            <strong>조작:</strong>
             <ul>
                 <li><span>화면 드래그:</span> 3D 회전</li>
                 <li><span>마우스 휠:</span> 확대/축소</li>
@@ -38,7 +38,7 @@
     <div id="control-panel">
         <button id="btn-toggle-right" class="sidebar-toggle-btn">▶</button>
         <div class="panel-section">
-            <div class="panel-title">🛠️ ENGINE CONTROLLER</div>
+            <div class="panel-title"> ENGINE CONTROLLER</div>
             <div class="btn-row">
                 <button id="btn-add-point" class="btn btn-green">+ 제어점 추가</button>
                 <button id="btn-del-point" class="btn btn-red">- 마지막 점 삭제</button>
@@ -62,12 +62,12 @@
         </div>
 
         <div class="panel-section">
-            <div class="panel-title">📍 CONTROL POINTS & SLIDERS</div>
+            <div class="panel-title"> CONTROL POINTS & SLIDERS</div>
             <div id="dynamic-sliders-container"></div>
         </div>
 
         <div class="panel-section">
-            <div class="panel-title">📐 PARAMETRIC MATRIX</div>
+            <div class="panel-title"> PARAMETRIC MATRIX</div>
             <div class="math-label">곡선 차수: <span id="curve-degree" class="highlight">3</span>차 식 (Points: <span id="points-count">4</span>)</div>
             <div class="math-container">
                 <div id="matrix-x">X(t) = 연산 대기 중...</div>
