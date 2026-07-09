@@ -138,13 +138,11 @@ function rebuildDragControls() {
     dragControls.addEventListener('dragend', () => orbitControls.enabled = true);
 }
 
-// 5. 드 카스텔조 분할 가이드선 재생성 엔진 (안전성 대폭 강화)
 function updateConstructionLines() {
-    // 무대 위 개별 오브젝트 제거 및 고유 자원만 타겟 해제
     constructionObjects.forEach(obj => {
         scene.remove(obj);
-        if (obj.isLine) obj.geometry.dispose(); // 라인의 고유 BufferGeometry 해제
-        if (obj.material) obj.material.dispose(); // 각 매티리얼 자원 독립 해제
+        if (obj.isLine) obj.geometry.dispose(); 
+        if (obj.material) obj.material.dispose(); 
     });
     constructionObjects = [];
 
@@ -163,7 +161,6 @@ function updateConstructionLines() {
     steps.forEach((stepPoints, levelIdx) => {
         let currentColor = layerColors[levelIdx % layerColors.length];
 
-        // 1) 보간점들을 연결하는 결합 가이드선 드로잉
         if (stepPoints.length > 1) {
             const lineGeo = new THREE.BufferGeometry().setFromPoints(stepPoints);
             const lineMat = new THREE.LineBasicMaterial({ color: currentColor });
@@ -172,7 +169,6 @@ function updateConstructionLines() {
             constructionObjects.push(lineObj);
         }
 
-        // 2) 보간 마디 정점 미니 구체 배치 (전역 공유 지오메트리를 사용하여 크래시 방지)
         stepPoints.forEach((pos) => {
             const sphereMat = new THREE.MeshBasicMaterial({ color: currentColor });
             const sphereMesh = new THREE.Mesh(sharedSphereGeo, sphereMat);
@@ -199,7 +195,6 @@ function updateEngine() {
     bezierLine = new THREE.Line(bezierGeo, new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 3 }));
     scene.add(bezierLine);
 
-    // 가이드 분할선 리렌더링 바인딩
     updateConstructionLines();
     refreshUIControls();
 }
@@ -245,6 +240,7 @@ function refreshUIControls() {
         });
     }
 
+    // 1) 기존 Bernstein 다항식 행렬 출력 유지
     let strX = "X(t) = ", strY = "Y(t) = ", strZ = "Z(t) = ";
     const n = controlPoints.length - 1;
     
@@ -257,9 +253,47 @@ function refreshUIControls() {
     document.getElementById('matrix-x').innerText = strX;
     document.getElementById('matrix-y').innerText = strY;
     document.getElementById('matrix-z').innerText = strZ;
+
+    // 2) [신규 연동 대책] 3D 화면 속 분할선 레이어 색상과 결합된 실시간 좌표 보간 추적 연산기
+    const traceContainer = document.getElementById('de-casteljau-trace');
+    if (traceContainer) {
+        let traceHtml = `<div style="color: #94a3b8; font-weight: bold; margin: 12px 0 4px 0; border-top: 1px dashed #1e293b; padding-top: 8px;">📍 실시간 분할선 좌표 보간 계층 (t = ${simTime.toFixed(2)})</div>`;
+        let steps = BezierMath.getConstructionSteps(controlPoints, simTime);
+        const layerNames = ["녹색선 분할점 (Q)", "청록선 분할점 (R)", "핑크선 분할점 (S)", "오렌지선 분할점", "자수정선 분할점"];
+        
+        steps.forEach((stepPoints, levelIdx) => {
+            let name = layerNames[levelIdx % layerNames.length];
+            let levelClass = `text-level-${levelIdx % 5}`;
+            traceHtml += `<div class="${levelClass}" style="margin-top: 4px; font-size: 10px;">• ${name}:<br/>`;
+            stepPoints.forEach((pos, ptIdx) => {
+                traceHtml += `&nbsp;&nbsp;[${ptIdx}] (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})<br/>`;
+            });
+            traceHtml += `</div>`;
+        });
+
+        if (steps.length > 0) {
+            let finalPos = BezierMath.getPosition(controlPoints, simTime);
+            traceHtml += `<div style="color: #34d399; margin-top: 6px; font-weight: bold; font-size: 11px;">• 최종 곡선 도달점 B(t):<br/>&nbsp;&nbsp;(${finalPos.x.toFixed(1)}, ${finalPos.y.toFixed(1)}, ${finalPos.z.toFixed(1)})</div>`;
+        }
+        traceContainer.innerHTML = traceHtml;
+    }
 }
 
 function initUIEvents() {
+    // [신규 수정 사항] 좌우 사이드바를 유연하게 닫았다 열 수 있는 인터랙션 바인딩
+    const infoPanel = document.getElementById('info-panel');
+    const controlPanel = document.getElementById('control-panel');
+
+    document.getElementById('btn-toggle-left').addEventListener('click', (e) => {
+        infoPanel.classList.toggle('collapsed');
+        e.target.innerText = infoPanel.classList.contains('collapsed') ? "▶" : "◀";
+    });
+
+    document.getElementById('btn-toggle-right').addEventListener('click', (e) => {
+        controlPanel.classList.toggle('collapsed');
+        e.target.innerText = controlPanel.classList.contains('collapsed') ? "◀" : "▶";
+    });
+
     document.getElementById('preset-select').addEventListener('change', (e) => {
         loadPreset(e.target.value);
         resetSimulationState();
@@ -269,11 +303,10 @@ function initUIEvents() {
         updateConstructionLines();
     });
 
-    // 수동 t값 입력 슬라이더 이벤트 리스너 바인딩 (수동 제어용)
     const tSlider = document.getElementById('input-t-value');
     const tDisplay = document.getElementById('t-value-display');
     tSlider.addEventListener('input', (e) => {
-        if (isSimulating) return; // 자동 비행 중일 때는 수동 인터랙션 락(Lock)
+        if (isSimulating) return; 
         simTime = parseFloat(e.target.value);
         tDisplay.innerText = simTime.toFixed(2);
         updateEngine();
@@ -346,7 +379,6 @@ function animateLoop() {
         simTime += 0.003; 
         if (simTime > 1.0) simTime = 0.0; 
 
-        // 자동 구동 시 대시보드 내 UI 슬라이더 컴포넌트 위치 실시간 역동기화
         document.getElementById('input-t-value').value = simTime;
         document.getElementById('t-value-display').innerText = simTime.toFixed(2);
 
