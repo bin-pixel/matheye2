@@ -1,3 +1,5 @@
+
+
 let scene, camera, renderer, orbitControls, dragControls;
 let controlPoints = [];      
 let pointMeshes = [];        
@@ -132,7 +134,7 @@ function rebuildDragControls() {
     dragControls.addEventListener('drag', (e) => {
         const idx = e.object.userData.index;
         controlPoints[idx].copy(e.object.position);
-        updateEngine(); // 움직이는 즉시 투사체 및 B(t) 좌표 연동 업데이트 유도
+        updateEngine(); 
     });
     dragControls.addEventListener('dragend', () => orbitControls.enabled = true);
 }
@@ -224,7 +226,7 @@ function updateEngine() {
     scene.add(bezierLine);
 
     updateConstructionLines();
- 
+    
     const currentPos = BezierMath.getPosition(controlPoints, simTime);
     const currentTangent = BezierMath.getTangent(controlPoints, simTime);
 
@@ -242,7 +244,7 @@ function refreshUIControls() {
     document.getElementById('curve-degree').innerText = controlPoints.length - 1;
     document.getElementById('points-count').innerText = controlPoints.length;
 
-
+    // 슬라이더 바인딩 수치 동기화
     controlPoints.forEach((p, idx) => {
         ['x','y','z'].forEach(axis => {
             const slider = document.querySelector(`.coord-slider[data-idx="${idx}"][data-axis="${axis}"]`);
@@ -265,11 +267,25 @@ function refreshUIControls() {
     document.getElementById('matrix-y').innerText = strY;
     document.getElementById('matrix-z').innerText = strZ;
 
-
+    // 🎯 최종 수렴 곡선 점 B(t) 좌표 실시간 동기화
     const finalPos = BezierMath.getPosition(controlPoints, simTime);
     const coordElem = document.getElementById('final-b-coordinates');
     if (coordElem) {
         coordElem.innerText = `(${finalPos.x.toFixed(2)}, ${finalPos.y.toFixed(2)}, ${finalPos.z.toFixed(2)})`;
+    }
+
+    // 🎯 [복구 핵심] 수렴 시 사용되는 각 가이드 선분의 실시간 내분비율 동기화 처리
+    const ratioLeft = (simTime * 100).toFixed(0);
+    const ratioRight = 100 - ratioLeft;
+    const ratioElem = document.getElementById('interpolation-ratio');
+    if (ratioElem) {
+        ratioElem.innerText = `${ratioLeft} : ${ratioRight}`;
+    }
+
+    // 수동 제어 시 상단 타임 텍스트 동기화용 보정 코드 추가
+    const tDisplay = document.getElementById('t-value-display');
+    if (tDisplay) {
+        tDisplay.innerText = simTime.toFixed(2);
     }
 }
 
@@ -277,7 +293,6 @@ function initUIEvents() {
     const infoPanel = document.getElementById('info-panel');
     const topPanel = document.getElementById('top-control-panel');
     const bottomPanel = document.getElementById('bottom-control-panel');
-
 
     document.getElementById('btn-toggle-left').addEventListener('click', (e) => {
         infoPanel.classList.toggle('collapsed');
@@ -304,20 +319,16 @@ function initUIEvents() {
     });
 
     const tSlider = document.getElementById('input-t-value');
-    const tDisplay = document.getElementById('t-value-display');
     tSlider.addEventListener('input', (e) => {
         if (isSimulating) return; 
         simTime = parseFloat(e.target.value);
-        tDisplay.innerText = simTime.toFixed(2);
         updateEngine();
     });
-
 
     const speedSlider = document.getElementById('input-sim-speed');
     const speedDisplay = document.getElementById('speed-value-display');
     speedSlider.addEventListener('input', (e) => {
         simSpeedStep = parseFloat(e.target.value);
-
         let multiplier = (simSpeedStep / 0.003).toFixed(1);
         speedDisplay.innerText = multiplier + "x";
     });
@@ -371,11 +382,6 @@ function resetSimulationState() {
     isSimulating = false;
     simTime = 0.25; 
     document.getElementById('input-t-value').value = 0.25;
-    document.getElementById('t-value-display').innerText = "0.25";
-    
-    const simBtn = document.getElementById('btn-toggle-sim');
-    simBtn.innerText = "▶ 투사체 시뮬레이션 시작";
-    simBtn.style.background = "linear-gradient(135deg, #0284c7, #0369a1)";
     updateEngine();
 }
 
@@ -388,7 +394,6 @@ function animateLoop() {
         if (simTime > 1.0) simTime = 0.0; 
 
         document.getElementById('input-t-value').value = simTime;
-        document.getElementById('t-value-display').innerText = simTime.toFixed(2);
 
         const currentPos = BezierMath.getPosition(controlPoints, simTime);
         const currentTangent = BezierMath.getTangent(controlPoints, simTime);
